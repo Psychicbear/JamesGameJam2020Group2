@@ -28,14 +28,16 @@
     },
     "enemies": [
         {
-            "id": "catBasic",
+            "id": 0,
+            "name": "catBasic",
             "enemySpeed": 35,
             "enemyHealth": 3,
             "enemyValue": 10,
             "resistances": []
         },
         {
-            "id": "catTank",
+            "id": 1,
+            "name": "catTank",
             "enemySpeed": 20,
             "enemyHealth": 6,
             "enemyValue": 20,
