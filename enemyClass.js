@@ -1,20 +1,26 @@
 let enemyTypes;
+let liveEnemies = [];
 
 class Enemy {
   constructor(enemyNum) {
-    this.sprite = createSprite(1280, 680, 25, 25);
+    this.sprite = createSprite(W, H-40, 25, 25);
+    //Merges JSON properties with enemyType properties
     Object.assign(this, enemyTypes[enemyNum]);
     this.sprite.addImage(testSprite)
-    this.nextPoint = createVector(1280,680)
+    //Set pathing for enemy
+    this.nextPoint = createVector(W,H-40)
     this.goal = createVector(20,50)
     this.pathIndex = 0
     this.sprite.scale = 2
     this.sprite.rotateToDirection = true
     this.path = pathfinding.findPath(this.nextPoint.x, this.nextPoint.y, this.goal.x, this.goal.y)
+    //Adds object to trackable arrays
+    enemyGroup.add(this.sprite)
     liveEnemies.push(this)
   }
 
   enemyMovement() {
+    //If the sprite is alive, allow it to move along the path
     if (!this.sprite.removed) {
       if (
         Math.abs(this.sprite.position.x - this.nextPoint.x) +
@@ -22,19 +28,8 @@ class Enemy {
         10
       ) {
         this.pathIndex += 1;
-
+        //Jf the sprite reaches the end, deduct health from player and remove the enemy from game
         if (this.pathIndex == this.path.length) {
-          //this means we have reached the end
-          //generate a new random goal for our knight to get to.
-          //goal.x = Math.random() * 800;
-          //goal.y = Math.random() * 600;
-          //
-          ////calculate path to new goal
-          //path = pathfinding.findPath(this.sprite.position.x, this.sprite.position.y, goal.x, goal.y);
-          //pathIndex = 0;
-          //
-          //nextPoint.x = this.sprite.position.x;
-          //nextPoint.y = this.sprite.position.y;
           this.sprite.remove();
           this.liveIndex = liveEnemies.indexOf(this)
           liveEnemies.splice(this.liveIndex,1)

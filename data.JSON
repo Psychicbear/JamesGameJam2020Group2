@@ -1,12 +1,10 @@
 {
-    "towers": {
-        "biscuitTower": {
-            "_classProperties": {
-                "attackTimer": 0,
-                "isSelected": false,
-                "isPurchased": false
-            },
-            "spriteIndex": 1,
+    "towers": [
+        {
+            "name": "biscuitTower",
+            "id": 0,
+            "isSelected": false,
+            "isPurchased": false,
             "towerCost": 200,
             "attackTimer": 0,
             "attackSpeed": 600,
@@ -15,8 +13,11 @@
             "towerRange": 100,
             "towerBuffs": {}
         },
-        "sprayTower": {
-            "spriteIndex": 2,
+        {
+            "name": "sprayTower",
+            "id": 1,
+            "isSelected": false,
+            "isPurchased": false,
             "towerCost": 400,
             "attackTimer": 0,
             "attackSpeed": 1000,
@@ -25,7 +26,7 @@
             "towerRange": 100,
             "towerBuffs": {}
         }
-    },
+    ],
     "enemies": [
         {
             "id": 0,
@@ -43,5 +44,11 @@
             "enemyValue": 20,
             "resistances": []
         }
-    ]
+    ],
+    "userInterface": {
+        "id": 0,
+        "name": "shop",
+        "type": "container"
+
+    }
 }
