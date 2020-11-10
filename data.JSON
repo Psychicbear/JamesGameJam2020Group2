@@ -23,7 +23,7 @@
             "attackSpeed": 1000,
             "canShoot": false,
             "bulletType": 2,
-            "towerRange": 100,
+            "towerRange": 75,
             "towerBuffs": {}
         }
     ],
@@ -31,7 +31,8 @@
         {
             "id": 0,
             "name": "catBasic",
-            "enemySpeed": 35,
+            "enemyScale": 1.5,
+            "enemySpeed": 10,
             "enemyHealth": 3,
             "enemyValue": 10,
             "resistances": []
@@ -39,7 +40,8 @@
         {
             "id": 1,
             "name": "catTank",
-            "enemySpeed": 20,
+            "enemyScale": 2,
+            "enemySpeed": 15,
             "enemyHealth": 6,
             "enemyValue": 20,
             "resistances": []

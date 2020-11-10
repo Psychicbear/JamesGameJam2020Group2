@@ -19,6 +19,7 @@ function preload() {
   //bulletImg = [loadImage("assets/bullet1"), loadImage("assets/bullet2")]
   //mapFile =  loadStrings("map.txt")
   //baseImg = loadImage("assets/base.png")
+  enemyImg = [loadAnimation("Sprites/whiteright0001.png","Sprites/whiteright0003.png"),loadAnimation("Sprites/whiteup0001.png","Sprites/whiteup0003.png")]
   gameData = loadJSON("data.JSON");
   pathFile = loadStrings("track.txt", splitStrings)
   waveFile = loadStrings("waves.txt", splitWaves)
@@ -31,6 +32,7 @@ function setup() {
   towerGroup = new Group()
   enemyGroup = new Group()
   grassGroup = new Group()
+  shopGroup = new Group()
   enemyTypes = gameData.enemies;
   towerTypes = gameData.towers
   console.log(enemyTypes);
@@ -38,7 +40,7 @@ function setup() {
 
 function draw() {
   background(170);
-  drawSprites();
+  
   //Switch to change game states
   switch (currentScene) {
     case LOADING:
@@ -57,6 +59,8 @@ function draw() {
       drawControlsScreen();
       break;
   }
+  fill(0)
+  textSize(20)
   text("FPS: " + round(frameRate()), 50,50)
 }
 
@@ -65,26 +69,53 @@ function drawLoadingScreen() {}
 function drawMainMenuScreen() {}
 
 function drawPlayScreen() {
+  drawSprites(grassGroup)
+  //Commands that run once at the beginning of the play screen
   if(!gameInit){
     pathfinding = new Pathfinding();
     pathfinding.loadGrid(pathGrid, 20, 20, 1280, 680, true);
-    tower = new Tower(W/3, 100,0)
+    grassTest = createSprite(W/2,H/2,W,H)
+    grassGroup.add(grassTest)
+    //tower = new Tower(W/3, 100,0)
     game = new WaveManager(waves)
     shop = new Shop()
-    grassTest = createSprite(W/3,H/4)
+    garbage = createSprite(W - 50,H - 50, 50,50)
     gameInit = true
   }
-  liveTowers.forEach(function(tower){
+  
+  shopTowers.forEach(function(tower){
+    //tower.sprite.mouseUpdate()
     if(tower.sprite.mouseIsPressed){
-      tower.sprite.position.x = mouseX
-      tower.sprite.position.y = mouseY
+      selectedTower = new Tower(mouseX,mouseY,tower.id)
+      towerGroup.add(selectedTower.sprite)
     }
-    tower.sprite.mouseUpdate()
   })
 
+  if(selectedTower != 0){
+    if(!selectedTower.isPurchased){
+      selectedTower.sprite.mouseUpdate()
+      selectedTower.sprite.position.x = mouseX
+      selectedTower.sprite.position.y = mouseY
+      drawSprite(garbage)
+      shop.isOpen = false
+      if(selectedTower.timer >= selectedTower.clickBuffer){
+        if(selectedTower.sprite.overlap(garbage)){
+          selectedTower.cantPlace()
+        } else if(!selectedTower.sprite.overlap(grassGroup)){
+          selectedTower.cantPlace()
+        } else{
+          selectedTower.purchaseTower()
+        }
+      }
+    }
+
+    
+    selectedTower.timer += deltaTime
+  }
+  strokeWeight(1)
   //Debug to spawn enemy on spacebar press
   if(keyWentUp(32)){
-    enemy = new Enemy(1);
+    game.nextWave = true;
   }
 
   //If nextWave button is presesed, start next wave
@@ -103,7 +134,10 @@ function drawPlayScreen() {
   
   //Pathing debugging
   drawGrid(pathfinding, false);
+  drawSprites(towerGroup)
+  drawSprites(enemyGroup)
   shop.drawShop()
+  drawSprites(shopGroup)
   shop.shopButton()
   //drawPath(liveEnemies[0].path);
 }

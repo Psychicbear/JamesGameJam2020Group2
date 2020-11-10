@@ -6,13 +6,14 @@ class Enemy {
     this.sprite = createSprite(W, H-40, 25, 25);
     //Merges JSON properties with enemyType properties
     Object.assign(this, enemyTypes[enemyNum]);
-    this.sprite.addImage(testSprite)
+    this.sprite.addAnimation("default",enemyImg[0])
+    //this.sprite.setAnimation("default")
     //Set pathing for enemy
     this.nextPoint = createVector(W,H-40)
     this.goal = createVector(20,50)
     this.pathIndex = 0
-    this.sprite.scale = 2
-    this.sprite.rotateToDirection = true
+    this.sprite.scale = this.enemyScale
+    //this.sprite.rotateToDirection = true
     this.path = pathfinding.findPath(this.nextPoint.x, this.nextPoint.y, this.goal.x, this.goal.y)
     //Adds object to trackable arrays
     enemyGroup.add(this.sprite)
@@ -37,8 +38,8 @@ class Enemy {
           //next point is first index of array
           this.nextPoint = this.path[this.pathIndex];
 
-          this.sprite.velocity.x = (this.nextPoint.x - this.sprite.position.x) / 5;
-          this.sprite.velocity.y = (this.nextPoint.y - this.sprite.position.y) / 5;
+          this.sprite.velocity.x = (this.nextPoint.x - this.sprite.position.x) / this.enemySpeed;
+          this.sprite.velocity.y = (this.nextPoint.y - this.sprite.position.y) / this.enemySpeed;
 
           if (this.sprite.velocity.x > 0) {
             this.sprite.mirrorX(1);
