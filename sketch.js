@@ -14,6 +14,7 @@ let gameInit = false;
 let clickTimer = 0;
 let bulletTypes = []
 let activeElement = {}
+let waveOverride = false
 
 function preload() {
   towerImg = [loadImage("Sprites/tower1.png"), loadImage("Sprites/tower2.png"), loadImage("Sprites/tower3.png")]
@@ -184,12 +185,15 @@ function drawPlayScreen() {
   //Debug: spawn enemy on spacebar press
   if (keyWentUp(32)) {
     game.waveActive = true;
-    shop.isOpen = false
   }
 
   //If nextWave button is presesed, start next wave
-  if (game.waveActive) {
+  if (game.waveActive || waveOverride) {
+    waveOverride = false
     game.spawnWave();
+    if (keyWentUp(32)) {
+      waveOverride = true;
+    }
   } else{liveEnemies = []}
 
   //Displays level that player is on
@@ -205,12 +209,12 @@ function drawPlayScreen() {
     enemyMovement(enemy);
   });
 
+  drawSprites(bulletGroup)
   drawSprites(towerGroup);
   drawSprites(enemyGroup);
   shop.drawShop();
   drawSprites(shopGroup);
   shop.shopButton();
-  drawSprites(bulletGroup)
   if(!activeElement.sprite.mouseIsOver){
     activeElement = {}
     activeElement.sprite = inactive
@@ -311,6 +315,9 @@ function enemyDamage(bullet,enemy){
     game.playerMoney += enemy.enemyValue
     liveIndex = liveEnemies.indexOf(enemy)
     liveEnemies.splice(liveIndex,1)
+  }
+  if(bullet.id == 1){
+    enemy.pathIndex -= 10
   }
   bullet.remove()
   liveIndex = liveBullets.indexOf(bullet)

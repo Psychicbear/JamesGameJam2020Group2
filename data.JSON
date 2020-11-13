@@ -24,7 +24,7 @@
             "attackTimer": 0,
             "attackSpeed": 1000,
             "canShoot": false,
-            "bulletType": 0,
+            "bulletType": 1,
             "towerRange": 75,
             "towerBuffs": {}
         },
@@ -80,6 +80,11 @@
             "id": 0,
             "name": "biscuit",
             "damage": 1
+        },
+        {
+            "id": 1,
+            "name": "water",
+            "damage": 0
         }
     ]
 }
