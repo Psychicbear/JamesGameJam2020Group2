@@ -1,29 +1,45 @@
 {
     "towers": [
         {
-            "name": "biscuitTower",
+            "name": "Biscuit Dispenser",
             "id": 0,
+            "info": "Ol' reliable, feeds cats till they tire from eating",
             "isSelected": false,
             "isPurchased": false,
             "towerCost": 200,
             "attackTimer": 0,
             "attackSpeed": 600,
             "canShoot": false,
-            "bulletType": 1,
+            "bulletType": 0,
             "towerRange": 100,
             "towerBuffs": {}
         },
         {
-            "name": "sprayTower",
+            "name": "Spray Bottle",
             "id": 1,
+            "info": "A cat's biggest fear, this tower has a chance of scaring cats back the way they came",
             "isSelected": false,
             "isPurchased": false,
             "towerCost": 400,
             "attackTimer": 0,
             "attackSpeed": 1000,
             "canShoot": false,
-            "bulletType": 2,
+            "bulletType": 0,
             "towerRange": 75,
+            "towerBuffs": {}
+        },
+        {
+            "name": "Super Tower",
+            "id": 2,
+            "info": "Crazy fast firerate, the greatest yarn scientists worked together to manufacture this masterpiece",
+            "isSelected": false,
+            "isPurchased": false,
+            "towerCost": 1000,
+            "attackTimer": 0,
+            "attackSpeed": 100,
+            "canShoot": false,
+            "bulletType": 0,
+            "towerRange": 150,
             "towerBuffs": {}
         }
     ],
@@ -32,25 +48,38 @@
             "id": 0,
             "name": "catBasic",
             "enemyScale": 1.5,
-            "enemySpeed": 10,
-            "enemyHealth": 3,
-            "enemyValue": 10,
+            "enemySpeed": 30,
+            "enemyHealth": 1,
+            "enemyValue": 25,
+            "enemyDamage": 1,
             "resistances": []
         },
         {
             "id": 1,
             "name": "catTank",
             "enemyScale": 2,
-            "enemySpeed": 15,
-            "enemyHealth": 6,
-            "enemyValue": 20,
+            "enemySpeed": 50,
+            "enemyHealth": 3,
+            "enemyValue": 50,
+            "enemyDamage": 2,
+            "resistances": []
+        },
+        {
+            "id": 2,
+            "name": "catFast",
+            "enemyScale": 1.75,
+            "enemySpeed": 40,
+            "enemyHealth": 3,
+            "enemyValue": 75,
+            "enemyDamage": 2,
             "resistances": []
         }
     ],
-    "userInterface": {
-        "id": 0,
-        "name": "shop",
-        "type": "container"
-
-    }
+    "bullets": [
+        {
+            "id": 0,
+            "name": "biscuit",
+            "damage": 1
+        }
+    ]
 }

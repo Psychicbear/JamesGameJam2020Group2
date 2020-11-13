@@ -20,13 +20,15 @@ class Shop {
             //Draw shop menu
             this.button.position.x = this.shopContainer.x - 13
             rectMode(CORNER)
+            fill(255,255,255,150)
+            stroke(0)
             rect(this.shopContainer.x,this.shopContainer.y,this.shopContainer.w,this.shopContainer.h)
             this.drawTowerContainer()
             fill(0)
             textSize(20)
             text("Shop",this.shopContainer.x+40,this.shopContainer.y+30)
             if(!this.towersDrawn){
-                this.towersDrawn = true
+                //this.towersDrawn = true
             }
         } else if(!this.isOpen){
             this.button.position.x = W - 13
@@ -70,6 +72,9 @@ class Shop {
     }
 
     shopButton(){
+        if(this.button.mouseIsOver){
+            cursor(HAND)
+        }
         if(this.button.mouseIsPressed){
             this.buttonCheck++
         }

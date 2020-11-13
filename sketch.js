@@ -5,42 +5,62 @@ let PLAY = 2;
 let LEADEROARD = 3;
 let INTRUCTIONS = 4;
 const W = 1280;
-const H = 720;
+const H = 736;
 let quickSwitch = false;
 let pathFile;
-let nextWave = false
-let pathGrid = [];
+let nextWave = false;
 let pathIndex = 0;
-let gameInit = false
+let gameInit = false;
+let clickTimer = 0;
+let bulletTypes = []
 
 function preload() {
   //towerImg = [loadImage("assets/tower1"), loadImage("assets/tower2")]
-  //enemyImg = [loadImage("assets/enemy1"), loadImage("assets/enemy2")]
   //bulletImg = [loadImage("assets/bullet1"), loadImage("assets/bullet2")]
-  //mapFile =  loadStrings("map.txt")
   //baseImg = loadImage("assets/base.png")
-  enemyImg = [loadAnimation("Sprites/whiteright0001.png","Sprites/whiteright0003.png"),loadAnimation("Sprites/whiteup0001.png","Sprites/whiteup0003.png")]
+  enemyImg = [
+    loadAnimation("Sprites/tile0001.png", "Sprites/tile0003.png"),
+    loadAnimation("Sprites/whiteup0001.png", "Sprites/whiteup0003.png"),
+  ];
+  tileImg = [
+    loadImage("Sprites/tiles0.png"),
+    loadImage("Sprites/tiles1.png"),
+    loadImage("Sprites/tiles2.png"),
+    loadImage("Sprites/tiles3.png"),
+    loadImage("Sprites/tiles4.png"),
+    loadImage("Sprites/tiles5.png"),
+    loadImage("Sprites/tiles6.png"),
+    loadImage("Sprites/tiles7.png"),
+  ];
   gameData = loadJSON("data.JSON");
-  pathFile = loadStrings("track.txt", splitStrings)
-  waveFile = loadStrings("waves.txt", splitWaves)
-  testSprite = loadImage("Sprites/health.png")
+  mapFile = loadStrings("map.txt");
+  pathFile = loadStrings("track.txt");
+  waveFile = loadStrings("waves.txt");
+  testSprite = loadImage("Sprites/health.png");
 }
 
 function setup() {
   createCanvas(W, H);
+  //frameRate(30)
+  useQuadTree(true);
   currentScene = 2;
-  towerGroup = new Group()
-  enemyGroup = new Group()
-  grassGroup = new Group()
-  shopGroup = new Group()
+  pathFile = convertToArray(pathFile)
+  mapFile = convertToArray(mapFile)
+  waveFile = convertToArray(waveFile)
+  towerGroup = new Group();
+  enemyGroup = new Group();
+  grassGroup = new Group();
+  shopGroup = new Group();
+  pathGroup = new Group();
+  bulletGroup = new Group()
   enemyTypes = gameData.enemies;
-  towerTypes = gameData.towers
-  console.log(enemyTypes);
+  towerTypes = gameData.towers;
+  bulletTypes = gameData.bullets
 }
 
 function draw() {
   background(170);
-  
+
   //Switch to change game states
   switch (currentScene) {
     case LOADING:
@@ -59,9 +79,9 @@ function draw() {
       drawControlsScreen();
       break;
   }
-  fill(0)
-  textSize(20)
-  text("FPS: " + round(frameRate()), 50,50)
+  fill(0);
+  textSize(20);
+  text("FPS: " + round(frameRate()), 50, 50);
 }
 
 function drawLoadingScreen() {}
@@ -69,97 +89,165 @@ function drawLoadingScreen() {}
 function drawMainMenuScreen() {}
 
 function drawPlayScreen() {
-  drawSprites(grassGroup)
+  cursor(ARROW)
   //Commands that run once at the beginning of the play screen
-  if(!gameInit){
+  if (!gameInit) {
     pathfinding = new Pathfinding();
-    pathfinding.loadGrid(pathGrid, 20, 20, 1280, 680, true);
-    grassTest = createSprite(W/2,H/2,W,H)
-    grassGroup.add(grassTest)
-    //tower = new Tower(W/3, 100,0)
-    game = new WaveManager(waves)
-    shop = new Shop()
-    garbage = createSprite(W - 50,H - 50, 50,50)
-    gameInit = true
+    pathfinding.loadGrid(pathFile, 16, 16, W, H, false);
+    game = new WaveManager(waveFile);
+    shop = new Shop();
+    garbage = createSprite(W - 50, H - 50, 50, 50);
+    closeButton = new CloseButton()
+    gameInit = true;
+    pg = createGraphics(W,H)
+    createMap()
   }
+
+  //Draws background tiles
+  image(pg,0,0)
+  drawSprites(pathGroup);
+
+  //Debug: draws enemy path
+  drawGrid(pathfinding, false);
+
+  //Checks live towers for enemies in their radius
+  liveTowers.forEach(function (tower) {
+    tower.selectPurchasedTower()
+    tower.sprite.overlap(enemyGroup, function(spriteA, enemy){
+      if (tower.currentTarget == 0) {
+        tower.currentTarget = enemy;
+      } else {
+        if(tower.canShoot && !tower.currentTarget.removed){
+          tower.shootEnemy()
+          tower.attackTimer = 0
+          tower.canShoot = false
+        } else {tower.currentTarget = 0}
+      }
+    });
+    if(tower.attackTimer > tower.attackSpeed){
+        tower.canShoot = true
+    } else{tower.attackTimer += deltaTime}
+  });
   
-  shopTowers.forEach(function(tower){
-    //tower.sprite.mouseUpdate()
-    if(tower.sprite.mouseIsPressed){
-      selectedTower = new Tower(mouseX,mouseY,tower.id)
-      towerGroup.add(selectedTower.sprite)
+  //Checks bullet collision
+  liveBullets.forEach(function(bullet){
+    bullet.sprite.overlap(enemyGroup, enemyDamage)
+    if(!bullet.sprite.overlap(bullet.parent)){//If bullet leaves tower radius
+      bullet.sprite.remove()
+      bulletIndex = liveBullets.indexOf(bullet)
+      liveBullets.splice(bulletIndex,1)
     }
   })
 
-  if(selectedTower != 0){
-    if(!selectedTower.isPurchased){
-      selectedTower.sprite.mouseUpdate()
-      selectedTower.sprite.position.x = mouseX
-      selectedTower.sprite.position.y = mouseY
-      drawSprite(garbage)
-      shop.isOpen = false
-      if(selectedTower.timer >= selectedTower.clickBuffer){
-        if(selectedTower.sprite.overlap(garbage)){
-          selectedTower.cantPlace()
-        } else if(!selectedTower.sprite.overlap(grassGroup)){
-          selectedTower.cantPlace()
-        } else{
-          selectedTower.purchaseTower()
+  //Selects tower from tower shop
+  shopTowers.forEach(function (tower) {
+    if (tower.sprite.mouseIsOver) {
+      if (tower.towerCost <= game.playerMoney){
+        cursor(HAND)
+        if(mouseWentUp()){
+          selectedTower = new Tower(mouseX, mouseY, tower.id);
+          towerGroup.add(selectedTower.sprite);
         }
       }
+      game.shopInfo(tower);
     }
+  });
 
-    
-    selectedTower.timer += deltaTime
+  //Decides whether or not tower will be placed
+  if (selectedTower != 0) {
+    if (!selectedTower.isPurchased) {
+      cursor("grab")
+      selectedTower.sprite.position.x = mouseX;
+      selectedTower.sprite.position.y = mouseY;
+      drawSprite(garbage);
+      shop.isOpen = false;
+      if (selectedTower.timer >= selectedTower.clickBuffer) {
+        if (selectedTower.sprite.overlap(garbage)) {
+          selectedTower.cantPlace();
+        } else if (selectedTower.sprite.overlap(pathGroup)) {
+          selectedTower.cantPlace();
+        } else {
+          selectedTower.purchaseTower();
+        }
+      }
+    } else{selectedTower.showRange(0,0,0);game.shopInfo(selectedTower)}
+    selectedTower.timer += deltaTime;
   }
-  strokeWeight(1)
-  //Debug to spawn enemy on spacebar press
-  if(keyWentUp(32)){
-    game.nextWave = true;
+
+  strokeWeight(1);
+  //Debug: spawn enemy on spacebar press
+  if (keyWentUp(32)) {
+    game.waveActive = true;
+    shop.isOpen = false
   }
 
   //If nextWave button is presesed, start next wave
-  if(game.nextWave){
-    game.spawnWave()
-  }
+  if (game.waveActive) {
+    game.spawnWave();
+  } else{liveEnemies = []}
 
   //Displays level that player is on
-  fill(0)
-  text("Wave Number:" + (game.currentWave+1),W/2,H/3)
+  textStyle(BOLD);
+  fill(0);
+  textSize(20);
+  text("Level:" + (game.currentWave + 1), W * 0.9, H * 0.15);
+  text("Money: $" + game.playerMoney, W * 0.9, H * 0.2);
+  text("Health: " + game.playerHealth, W * 0.9, H * 0.25);
 
   //All enemies that are alive will move along a set path
-  liveEnemies.forEach(function (enemy) {
-    enemy.enemyMovement();
+  enemyGroup.forEach(function (enemy) {
+    enemyMovement(enemy);
   });
-  
-  //Pathing debugging
-  drawGrid(pathfinding, false);
-  drawSprites(towerGroup)
-  drawSprites(enemyGroup)
-  shop.drawShop()
-  drawSprites(shopGroup)
-  shop.shopButton()
-  //drawPath(liveEnemies[0].path);
+
+  drawSprites(towerGroup);
+  drawSprites(enemyGroup);
+  shop.drawShop();
+  drawSprites(shopGroup);
+  shop.shopButton();
+  drawSprites(bulletGroup)
 }
 
 function drawLeaderboardScreen() {}
 
 function drawInstructionsScreen() {}
 
-//Splits map file
-function splitStrings(stringFile) {
-  stringFile.forEach(function (line) {
-    newLine = line.split(" ");
-    pathGrid.push(newLine);
-  });
+//Converts loaded strings to readable arrays
+function convertToArray(file){
+  buffer = []
+  file.forEach(function(line){
+    newLine = line.split("")
+    buffer.push(newLine)
+  })
+  return buffer
 }
 
-//Splits wave file
-function splitWaves(){
-  waveFile.forEach(function(wave){
-    newWave = wave.split(" ")
-    waves.push(newWave)
-  })
+//Creates the background map
+function createMap() {
+  i = 0;
+  x = 16;
+  y = 16;
+  mapFile.forEach(function (line) {
+    j = 0;
+    line.forEach(function (char) {
+      tileIndex = parseInt(char);
+      if (tileIndex == 0) {
+        chooseTile = round(random(0,1))
+        if(chooseTile == 0){
+          pg.image(tileImg[0],x-16,y-16)
+        } else {pg.image(tileImg[7],x-16,y-16)}
+      } else {
+        sprite = createSprite(x, y, 32, 32);
+        sprite.addImage(tileImg[tileIndex]);
+        pathGroup.add(sprite);
+      }
+
+      x += 32;
+      j++;
+    });
+    i++;
+    x = 16;
+    y += 32;
+  });
 }
 
 //Debug option which draws pathing grid
@@ -191,3 +279,60 @@ function drawPath(path) {
     }
   }
 }
+
+function targetSelect(spriteA,enemy) {
+  if (tower.currentTarget == 0) {
+    tower.currentTarget = enemy;
+  } else {
+    tower.sprite.attractionPoint(
+      0,
+      tower.currentTarget.sprite.position.x,
+      tower.currentTarget.sprite.position.y
+    );
+  }
+}
+
+function enemyDamage(bullet,enemy){
+  enemy.enemyHealth -= bullet.damage
+  if(enemy.enemyHealth <= 0){
+    enemy.life = 1
+    game.playerMoney += enemy.enemyValue
+    liveIndex = liveEnemies.indexOf(enemy)
+    liveEnemies.splice(liveIndex,1)
+  }
+  bullet.remove()
+  liveIndex = liveBullets.indexOf(bullet)
+  liveBullets.indexOf(bullet)
+}
+
+//I wanted to attach this to enemy class however it caused pathing errors
+function enemyMovement(enemy) {
+  //If the sprite is alive, allow it to move along the path
+  if (!enemy.removed) {
+    if (
+      Math.abs(enemy.position.x - enemy.nextPoint.x) +
+        Math.abs(enemy.position.y - enemy.nextPoint.y) <
+      10
+    ) {
+      enemy.pathIndex += 1;
+      //if the sprite reaches the end, deduct health from player and remove the enemy from game
+      if (enemy.pathIndex == enemy.path.length) {
+        enemy.life = 1
+        game.playerHealth -= enemy.enemyDamage
+      } else {
+        //next point is first index of array
+        enemy.nextPoint = enemy.path[enemy.pathIndex];
+
+        enemy.velocity.x = (enemy.nextPoint.x - enemy.position.x) / enemy.enemySpeed;
+        enemy.velocity.y = (enemy.nextPoint.y - enemy.position.y) / enemy.enemySpeed;
+
+        if (enemy.velocity.x > 0) {
+          enemy.mirrorX(1);
+        } else {
+          enemy.mirrorX(-1);
+        }
+      }
+    }
+  }
+}
+
