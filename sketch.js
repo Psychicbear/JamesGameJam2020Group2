@@ -13,11 +13,11 @@ let pathIndex = 0;
 let gameInit = false;
 let clickTimer = 0;
 let bulletTypes = []
+let activeElement = {}
 
 function preload() {
-  //towerImg = [loadImage("assets/tower1"), loadImage("assets/tower2")]
+  towerImg = [loadImage("Sprites/tower1.png"), loadImage("Sprites/tower2.png"), loadImage("Sprites/tower3.png")]
   //bulletImg = [loadImage("assets/bullet1"), loadImage("assets/bullet2")]
-  //baseImg = loadImage("assets/base.png")
   enemyImg = [
     loadAnimation("Sprites/tile0001.png", "Sprites/tile0003.png"),
     loadAnimation("Sprites/whiteup0001.png", "Sprites/whiteup0003.png"),
@@ -41,7 +41,7 @@ function preload() {
 
 function setup() {
   createCanvas(W, H);
-  //frameRate(30)
+  angleMode(DEGREES)
   useQuadTree(true);
   currentScene = 2;
   pathFile = convertToArray(pathFile)
@@ -97,7 +97,8 @@ function drawPlayScreen() {
     game = new WaveManager(waveFile);
     shop = new Shop();
     garbage = createSprite(W - 50, H - 50, 50, 50);
-    closeButton = new CloseButton()
+    inactive = createSprite(-1,-1,1,1)
+    activeElement.sprite = inactive
     gameInit = true;
     pg = createGraphics(W,H)
     createMap()
@@ -117,6 +118,7 @@ function drawPlayScreen() {
       if (tower.currentTarget == 0) {
         tower.currentTarget = enemy;
       } else {
+        tower.sprite.rotation = -atan2(tower.sprite.position.x - tower.currentTarget.position.x, tower.sprite.position.y - tower.currentTarget.position.y)
         if(tower.canShoot && !tower.currentTarget.removed){
           tower.shootEnemy()
           tower.attackTimer = 0
@@ -149,7 +151,7 @@ function drawPlayScreen() {
           towerGroup.add(selectedTower.sprite);
         }
       }
-      game.shopInfo(tower);
+      mouseOverSprite(tower);
     }
   });
 
@@ -170,7 +172,11 @@ function drawPlayScreen() {
           selectedTower.purchaseTower();
         }
       }
-    } else{selectedTower.showRange(0,0,0);game.shopInfo(selectedTower)}
+    } else{
+      if(!selectedTower.mouseIsOver && mouseWentDown()){
+        selectedTower = 0
+      } else{selectedTower.showRange(0,0,0)}
+    }
     selectedTower.timer += deltaTime;
   }
 
@@ -190,9 +196,9 @@ function drawPlayScreen() {
   textStyle(BOLD);
   fill(0);
   textSize(20);
-  text("Level:" + (game.currentWave + 1), W * 0.9, H * 0.15);
-  text("Money: $" + game.playerMoney, W * 0.9, H * 0.2);
-  text("Health: " + game.playerHealth, W * 0.9, H * 0.25);
+  text("Level: " + (game.currentWave + 1), W * 0.9, H * 0.15);
+  text("$$$: " + game.playerMoney, W * 0.9, H * 0.19);
+  text("HP: " + game.playerHealth, W * 0.9, H * 0.23);
 
   //All enemies that are alive will move along a set path
   enemyGroup.forEach(function (enemy) {
@@ -205,6 +211,12 @@ function drawPlayScreen() {
   drawSprites(shopGroup);
   shop.shopButton();
   drawSprites(bulletGroup)
+  if(!activeElement.sprite.mouseIsOver){
+    activeElement = {}
+    activeElement.sprite = inactive
+  }
+  game.isInfoShown()
+  console.log(activeElement)
 }
 
 function drawLeaderboardScreen() {}
@@ -336,3 +348,6 @@ function enemyMovement(enemy) {
   }
 }
 
+function mouseOverSprite(sprite){
+  activeElement = sprite
+}

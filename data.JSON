@@ -17,7 +17,7 @@
         {
             "name": "Spray Bottle",
             "id": 1,
-            "info": "A cat's biggest fear, this tower has a chance of scaring cats back the way they came",
+            "info": "A cat's biggest fear, this tower has a chance of scaring cats back the way they came\n(Doesn't currently work)",
             "isSelected": false,
             "isPurchased": false,
             "towerCost": 400,
@@ -34,7 +34,7 @@
             "info": "Crazy fast firerate, the greatest yarn scientists worked together to manufacture this masterpiece",
             "isSelected": false,
             "isPurchased": false,
-            "towerCost": 1000,
+            "towerCost": 3000,
             "attackTimer": 0,
             "attackSpeed": 100,
             "canShoot": false,
