@@ -16,6 +16,7 @@ let activeElement = {};
 let waveOverride = false;
 let instructPage = 0;
 let creditsPos = H;
+let menuInit = false
 
 function preload() {
   mainScreenSong = loadSound("otherassets/mainscreensong.mp3");
@@ -34,7 +35,7 @@ function preload() {
     loadImage("Sprites/watertower.png"),
     loadImage("Sprites/tower3.png"),
   ];
-  //bulletImg = [loadImage("assets/bullet1"), loadImage("assets/bullet2")]
+  bulletImg = [loadImage("Sprites/bullet1.png"),loadImage("Sprites/bullet1.png")]
   enemyImg = [
     loadAnimation("Sprites/tile0001.png", "Sprites/tile0003.png"),
     loadAnimation("Sprites/whiteup0001.png", "Sprites/whiteup0003.png"),
@@ -67,7 +68,7 @@ function setup() {
   createCanvas(W, H);
   angleMode(DEGREES);
   useQuadTree(true);
-  currentScene = 0;
+  currentScene = 1;
   pathFile = convertToArray(pathFile);
   mapFile = convertToArray(mapFile);
   waveFile = convertToArray(waveFile);
@@ -118,7 +119,7 @@ function drawLoadingScreen(screenNumber) {
   background(0);
   stroke(255, 0, 0);
   strokeWeight(10);
-
+  //Loading bar
   x = map(millis(), loadingStart, loadingStart + 5000, 0, width);
   fill(255, 0, 0);
   line(0 - width * 4, 5, x, 5);
@@ -127,7 +128,8 @@ function drawLoadingScreen(screenNumber) {
     currentScene = screenNumber;
     if (screenNumber === 1) {
       mainScreenSong.setVolume(0.05);
-      mainScreenSong.play();
+      //mainScreenSong.play();
+      mainScreenSong.loop()
     }
   }
   noStroke();
@@ -141,11 +143,14 @@ function drawMainMenuScreen() {
   textFont(newFont);
   frameRate(60);
   background(0);
-
-  yarnball = createSprite(width / 5.5, height / 3.15, 50, 50);
-  yarnball.addImage(yarnballImg);
-  yarnball2 = createSprite(width / 1.32, height / 3.15, 50, 50);
-  yarnball2.addImage(yarnballImg);
+  if(!menuInit){//Setup for menu
+    yarnball = createSprite(width / 5.5, height / 3.15, 50, 50);
+    yarnball.addImage(yarnballImg);
+    yarnball2 = createSprite(width / 1.32, height / 3.15, 50, 50);
+    yarnball2.addImage(yarnballImg);
+    menuInit = true
+  }
+  
   textSize(32);
   fill("red");
   text("CATASTROPHE: DEFENDERS OF THE YARN", width / 5, height / 3);
@@ -183,7 +188,7 @@ function drawPlayScreen() {
     pg = createGraphics(W, H);
     createMap();
     playScreenSong.setVolume(0.05);
-    playScreenSong.play();
+    playScreenSong.loop()
   }
 
   //Draws background tiles
@@ -195,15 +200,19 @@ function drawPlayScreen() {
 
   //Checks live towers for enemies in their radius
   liveTowers.forEach(function (tower) {
-    tower.selectPurchasedTower();
+    tower.selectPurchasedTower();//Triggers when selected tower is released
+   //Checks radius for enemies and fires at them
     tower.sprite.overlap(enemyGroup, function (spriteA, enemy) {
+      //Sets the tower target
       if (tower.currentTarget == 0) {
         tower.currentTarget = enemy;
       } else {
+        //Thank you to Henry for this line of code, rotates tower to enemy pos
         tower.sprite.rotation = -atan2(
           tower.sprite.position.x - tower.currentTarget.position.x,
           tower.sprite.position.y - tower.currentTarget.position.y
         );
+        //Shoots at the enemy
         if (tower.canShoot && !tower.currentTarget.removed) {
           tower.shootEnemy();
           tower.attackTimer = 0;
@@ -213,6 +222,7 @@ function drawPlayScreen() {
         }
       }
     });
+    //Sets the firerate of towers
     if (tower.attackTimer > tower.attackSpeed) {
       tower.canShoot = true;
     } else {
@@ -222,6 +232,7 @@ function drawPlayScreen() {
 
   //Checks bullet collision
   liveBullets.forEach(function (bullet) {
+    //Damages enemy and removes bullet
     bullet.sprite.overlap(enemyGroup, enemyDamage);
     if (!bullet.sprite.overlap(bullet.parent)) {
       //If bullet leaves tower radius
@@ -241,6 +252,7 @@ function drawPlayScreen() {
           towerGroup.add(selectedTower.sprite);
         }
       }
+      //Sets this tower to activeElement, showing tower info
       mouseOverSprite(tower);
     }
   });
@@ -289,7 +301,7 @@ function drawPlayScreen() {
     liveEnemies = [];
   }
 
-  //Displays level that player is on
+  //Displays game info
   textStyle(BOLD);
   fill(255);
   textSize(20);
@@ -314,6 +326,7 @@ function drawPlayScreen() {
     activeElement.sprite = inactive;
   }
   game.isInfoShown();
+  //playControls()
   // console.log(activeElement);
 }
 
@@ -434,7 +447,9 @@ function enemyDamage(bullet, enemy) {
     liveEnemies.splice(liveIndex, 1);
   }
   if (bullet.id == 1) {
-    enemy.pathIndex -= 10;
+    if(enemy.pathIndex - 10 < 0){
+      enemy.pathIndex = 0
+    } else{enemy.pathIndex -= 10;}
   }
   bullet.remove();
   liveIndex = liveBullets.indexOf(bullet);
