@@ -1,9 +1,8 @@
-let currentScene;
 let LOADING = 0;
 let MAIN_MENU = 1;
 let PLAY = 2;
-let LEADEROARD = 3;
-let INTRUCTIONS = 4;
+let CREDITS = 3;
+let INSTRUCTIONS = 4;
 const W = 1280;
 const H = 736;
 let quickSwitch = false;
@@ -12,12 +11,29 @@ let nextWave = false;
 let pathIndex = 0;
 let gameInit = false;
 let clickTimer = 0;
-let bulletTypes = []
-let activeElement = {}
-let waveOverride = false
+let bulletTypes = [];
+let activeElement = {};
+let waveOverride = false;
+let instructPage = 0;
+let creditsPos = H;
 
 function preload() {
-  towerImg = [loadImage("Sprites/tower1.png"), loadImage("Sprites/tower2.png"), loadImage("Sprites/tower3.png")]
+  mainScreenSong = loadSound("otherassets/mainscreensong.mp3");
+  playScreenSong = loadSound("otherassets/playscreensong.mp3");
+  meowSound = loadSound("otherassets/meowsound.wav");
+  shopclick = loadSound("otherassets/shopclick.wav");
+  menuselect = loadSound("otherassets/menuselect.wav");
+  clicksound = loadSound("otherassets/clicksound.wav");
+  instructiondoc = loadStrings("instructions.txt");
+  creditsdoc = loadStrings("credits.txt");
+  newFont = loadFont("Minecraft.ttf");
+  pauseImg = loadImage("otherassets/pause.png");
+  yarnballImg = loadImage("Sprites/yarnball.png.png");
+  towerImg = [
+    loadImage("Sprites/tower1.png"),
+    loadImage("Sprites/watertower.png"),
+    loadImage("Sprites/tower3.png"),
+  ];
   //bulletImg = [loadImage("assets/bullet1"), loadImage("assets/bullet2")]
   enemyImg = [
     loadAnimation("Sprites/tile0001.png", "Sprites/tile0003.png"),
@@ -38,34 +54,46 @@ function preload() {
   pathFile = loadStrings("track.txt");
   waveFile = loadStrings("waves.txt");
   testSprite = loadImage("Sprites/health.png");
+  mainmenuImg = [
+    loadImage("Sprites/menu1.png"),
+    loadImage("Sprites/menu2.png"),
+    loadImage("Sprites/menu3.png"),
+  ];
 }
 
 function setup() {
+  slider = createSlider(0, 1, 1, 0.1);
+  slider.position(100, 800);
   createCanvas(W, H);
-  angleMode(DEGREES)
+  angleMode(DEGREES);
   useQuadTree(true);
-  currentScene = 2;
-  pathFile = convertToArray(pathFile)
-  mapFile = convertToArray(mapFile)
-  waveFile = convertToArray(waveFile)
+  currentScene = 0;
+  pathFile = convertToArray(pathFile);
+  mapFile = convertToArray(mapFile);
+  waveFile = convertToArray(waveFile);
   towerGroup = new Group();
   enemyGroup = new Group();
   grassGroup = new Group();
   shopGroup = new Group();
   pathGroup = new Group();
-  bulletGroup = new Group()
+  bulletGroup = new Group();
+  mainmenuGroup = new Group();
   enemyTypes = gameData.enemies;
   towerTypes = gameData.towers;
-  bulletTypes = gameData.bullets
+  bulletTypes = gameData.bullets;
+  loadingStart = millis();
+
+  // vid.size(200, 100);
 }
 
 function draw() {
   background(170);
-
+  volumeLevel = slider.value();
+  masterVolume(volumeLevel);
   //Switch to change game states
   switch (currentScene) {
     case LOADING:
-      drawLoadingScreen();
+      drawLoadingScreen(1);
       break;
     case MAIN_MENU:
       drawMainMenuScreen();
@@ -73,11 +101,11 @@ function draw() {
     case PLAY:
       drawPlayScreen();
       break;
-    case LEADERBOARD:
-      drawLeaderboardScreen();
-      break;
     case INSTRUCTIONS:
-      drawControlsScreen();
+      drawInstructionsScreen();
+      break;
+    case CREDITS:
+      drawCreditsScreen();
       break;
   }
   fill(0);
@@ -85,12 +113,63 @@ function draw() {
   text("FPS: " + round(frameRate()), 50, 50);
 }
 
-function drawLoadingScreen() {}
+function drawLoadingScreen(screenNumber) {
+  textFont(newFont);
+  background(0);
+  stroke(255, 0, 0);
+  strokeWeight(10);
 
-function drawMainMenuScreen() {}
+  x = map(millis(), loadingStart, loadingStart + 5000, 0, width);
+  fill(255, 0, 0);
+  line(0 - width * 4, 5, x, 5);
+
+  if (x > 1500) {
+    currentScene = screenNumber;
+    if (screenNumber === 1) {
+      mainScreenSong.setVolume(0.05);
+      mainScreenSong.play();
+    }
+  }
+  noStroke();
+  textSize(32);
+
+  fill("red");
+  text("Loading...", width / 2.4, height / 2.1);
+}
+
+function drawMainMenuScreen() {
+  textFont(newFont);
+  frameRate(60);
+  background(0);
+
+  yarnball = createSprite(width / 5.5, height / 3.15, 50, 50);
+  yarnball.addImage(yarnballImg);
+  yarnball2 = createSprite(width / 1.32, height / 3.15, 50, 50);
+  yarnball2.addImage(yarnballImg);
+  textSize(32);
+  fill("red");
+  text("CATASTROPHE: DEFENDERS OF THE YARN", width / 5, height / 3);
+
+  textSize(32);
+  fill(0);
+
+  fill("green");
+  text("[Enter] To Play!", width / 8, height / 1.6);
+
+  fill("yellow");
+  text("[I] For Instructions Menu!", width / 1.9, height / 1.6);
+
+  fill("blue");
+  text("[C] For Credits!", width / 8, height / 1.4);
+
+  // fill("red");
+  // text("[S] For Backstory!", width / 1.9, height / 1.4);
+
+  drawSprites();
+}
 
 function drawPlayScreen() {
-  cursor(ARROW)
+  cursor(ARROW);
   //Commands that run once at the beginning of the play screen
   if (!gameInit) {
     pathfinding = new Pathfinding();
@@ -98,15 +177,17 @@ function drawPlayScreen() {
     game = new WaveManager(waveFile);
     shop = new Shop();
     garbage = createSprite(W - 50, H - 50, 50, 50);
-    inactive = createSprite(-1,-1,1,1)
-    activeElement.sprite = inactive
+    inactive = createSprite(-1, -1, 1, 1);
+    activeElement.sprite = inactive;
     gameInit = true;
-    pg = createGraphics(W,H)
-    createMap()
+    pg = createGraphics(W, H);
+    createMap();
+    playScreenSong.setVolume(0.05);
+    playScreenSong.play();
   }
 
   //Draws background tiles
-  image(pg,0,0)
+  image(pg, 0, 0);
   drawSprites(pathGroup);
 
   //Debug: draws enemy path
@@ -114,40 +195,48 @@ function drawPlayScreen() {
 
   //Checks live towers for enemies in their radius
   liveTowers.forEach(function (tower) {
-    tower.selectPurchasedTower()
-    tower.sprite.overlap(enemyGroup, function(spriteA, enemy){
+    tower.selectPurchasedTower();
+    tower.sprite.overlap(enemyGroup, function (spriteA, enemy) {
       if (tower.currentTarget == 0) {
         tower.currentTarget = enemy;
       } else {
-        tower.sprite.rotation = -atan2(tower.sprite.position.x - tower.currentTarget.position.x, tower.sprite.position.y - tower.currentTarget.position.y)
-        if(tower.canShoot && !tower.currentTarget.removed){
-          tower.shootEnemy()
-          tower.attackTimer = 0
-          tower.canShoot = false
-        } else {tower.currentTarget = 0}
+        tower.sprite.rotation = -atan2(
+          tower.sprite.position.x - tower.currentTarget.position.x,
+          tower.sprite.position.y - tower.currentTarget.position.y
+        );
+        if (tower.canShoot && !tower.currentTarget.removed) {
+          tower.shootEnemy();
+          tower.attackTimer = 0;
+          tower.canShoot = false;
+        } else {
+          tower.currentTarget = 0;
+        }
       }
     });
-    if(tower.attackTimer > tower.attackSpeed){
-        tower.canShoot = true
-    } else{tower.attackTimer += deltaTime}
-  });
-  
-  //Checks bullet collision
-  liveBullets.forEach(function(bullet){
-    bullet.sprite.overlap(enemyGroup, enemyDamage)
-    if(!bullet.sprite.overlap(bullet.parent)){//If bullet leaves tower radius
-      bullet.sprite.remove()
-      bulletIndex = liveBullets.indexOf(bullet)
-      liveBullets.splice(bulletIndex,1)
+    if (tower.attackTimer > tower.attackSpeed) {
+      tower.canShoot = true;
+    } else {
+      tower.attackTimer += deltaTime;
     }
-  })
+  });
+
+  //Checks bullet collision
+  liveBullets.forEach(function (bullet) {
+    bullet.sprite.overlap(enemyGroup, enemyDamage);
+    if (!bullet.sprite.overlap(bullet.parent)) {
+      //If bullet leaves tower radius
+      bullet.sprite.remove();
+      bulletIndex = liveBullets.indexOf(bullet);
+      liveBullets.splice(bulletIndex, 1);
+    }
+  });
 
   //Selects tower from tower shop
   shopTowers.forEach(function (tower) {
     if (tower.sprite.mouseIsOver) {
-      if (tower.towerCost <= game.playerMoney){
-        cursor(HAND)
-        if(mouseWentUp()){
+      if (tower.towerCost <= game.playerMoney) {
+        cursor(HAND);
+        if (mouseWentUp()) {
           selectedTower = new Tower(mouseX, mouseY, tower.id);
           towerGroup.add(selectedTower.sprite);
         }
@@ -159,7 +248,7 @@ function drawPlayScreen() {
   //Decides whether or not tower will be placed
   if (selectedTower != 0) {
     if (!selectedTower.isPurchased) {
-      cursor("grab")
+      cursor("grab");
       selectedTower.sprite.position.x = mouseX;
       selectedTower.sprite.position.y = mouseY;
       drawSprite(garbage);
@@ -173,10 +262,12 @@ function drawPlayScreen() {
           selectedTower.purchaseTower();
         }
       }
-    } else{
-      if(!selectedTower.mouseIsOver && mouseWentDown()){
-        selectedTower = 0
-      } else{selectedTower.showRange(0,0,0)}
+    } else {
+      if (!selectedTower.mouseIsOver && mouseWentDown()) {
+        selectedTower = 0;
+      } else {
+        selectedTower.showRange(0, 0, 0);
+      }
     }
     selectedTower.timer += deltaTime;
   }
@@ -189,53 +280,75 @@ function drawPlayScreen() {
 
   //If nextWave button is presesed, start next wave
   if (game.waveActive || waveOverride) {
-    waveOverride = false
+    waveOverride = false;
     game.spawnWave();
     if (keyWentUp(32)) {
       waveOverride = true;
     }
-  } else{liveEnemies = []}
+  } else {
+    liveEnemies = [];
+  }
 
   //Displays level that player is on
   textStyle(BOLD);
-  fill(0);
+  fill(255);
   textSize(20);
-  text("Level: " + (game.currentWave + 1), W * 0.9, H * 0.15);
-  text("$$$: " + game.playerMoney, W * 0.9, H * 0.19);
-  text("HP: " + game.playerHealth, W * 0.9, H * 0.23);
+  textFont(newFont);
+  text("Level : " + (game.currentWave + 1), W * 0.92, H * 0.15);
+  text("$$$ : " + game.playerMoney, W * 0.91, H * 0.19);
+  text("HP : " + game.playerHealth, W * 0.92, H * 0.23);
 
   //All enemies that are alive will move along a set path
   enemyGroup.forEach(function (enemy) {
     enemyMovement(enemy);
-    showEnemyHealth(enemy)
   });
 
-  drawSprites(bulletGroup)
+  drawSprites(bulletGroup);
   drawSprites(towerGroup);
   drawSprites(enemyGroup);
   shop.drawShop();
   drawSprites(shopGroup);
   shop.shopButton();
-  if(!activeElement.sprite.mouseIsOver){
-    activeElement = {}
-    activeElement.sprite = inactive
+  if (!activeElement.sprite.mouseIsOver) {
+    activeElement = {};
+    activeElement.sprite = inactive;
   }
-  game.isInfoShown()
-  console.log(activeElement)
+  game.isInfoShown();
+  // console.log(activeElement);
 }
 
-function drawLeaderboardScreen() {}
+// Instructions Screen!
+function drawInstructionsScreen() {
+  background(0);
+  fill(255);
+  textSize(32);
+  textFont(newFont);
+  text(instructiondoc[instructPage], width / 4, height / 2.5, width / 2, height / 1.5);
 
-function drawInstructionsScreen() {}
+  textSize(14);
+  fill("red");
+  text("<Press [Esc] for Main Menu>", 10, 10, 100, 100);
+  fill("green");
+  text("<Press [Enter] to Play!>", 10, 80, 100, 100);
+}
+
+function drawCreditsScreen() {
+  background(0);
+  fill(255);
+  textSize(64);
+  textFont(newFont);
+  text(creditsdoc, 150, creditsPos, width - 250, height * 10);
+  creditsPos -= 1.5;
+}
 
 //Converts loaded strings to readable arrays
-function convertToArray(file){
-  buffer = []
-  file.forEach(function(line){
-    newLine = line.split("")
-    buffer.push(newLine)
-  })
-  return buffer
+function convertToArray(file) {
+  buffer = [];
+  file.forEach(function (line) {
+    newLine = line.split("");
+    buffer.push(newLine);
+  });
+  return buffer;
 }
 
 //Creates the background map
@@ -248,10 +361,12 @@ function createMap() {
     line.forEach(function (char) {
       tileIndex = parseInt(char);
       if (tileIndex == 0) {
-        chooseTile = round(random(0,1))
-        if(chooseTile == 0){
-          pg.image(tileImg[0],x-16,y-16)
-        } else {pg.image(tileImg[7],x-16,y-16)}
+        chooseTile = round(random(0, 1));
+        if (chooseTile == 0) {
+          pg.image(tileImg[0], x - 16, y - 16);
+        } else {
+          pg.image(tileImg[7], x - 16, y - 16);
+        }
       } else {
         sprite = createSprite(x, y, 32, 32);
         sprite.addImage(tileImg[tileIndex]);
@@ -297,7 +412,7 @@ function drawPath(path) {
   }
 }
 
-function targetSelect(spriteA,enemy) {
+function targetSelect(spriteA, enemy) {
   if (tower.currentTarget == 0) {
     tower.currentTarget = enemy;
   } else {
@@ -309,29 +424,21 @@ function targetSelect(spriteA,enemy) {
   }
 }
 
-function showEnemyHealth(enemy){
-  rectMode(CENTER)
-  percent = enemy.enemyHealth / enemy.maxHealth
-  fill(255,0,0,150)
-  rect(enemy.position.x, enemy.position.y - 21, lerp(0,60,percent), 10)
-}
-
-function enemyDamage(bullet,enemy){
-  enemy.enemyHealth -= bullet.damage
-  if(enemy.enemyHealth <= 0){
-    enemy.life = 1
-    game.playerMoney += enemy.enemyValue
-    liveIndex = liveEnemies.indexOf(enemy)
-    liveEnemies.splice(liveIndex,1)
+function enemyDamage(bullet, enemy) {
+  enemy.enemyHealth -= bullet.damage;
+  if (enemy.enemyHealth <= 0) {
+    meowSound.play();
+    enemy.life = 1;
+    game.playerMoney += enemy.enemyValue;
+    liveIndex = liveEnemies.indexOf(enemy);
+    liveEnemies.splice(liveIndex, 1);
   }
-  if(bullet.id == 1){
-    if(enemy.pathIndex - 10 < 0){
-      enemy.pathIndex = 0
-    } else{enemy.pathIndex -= 10}
+  if (bullet.id == 1) {
+    enemy.pathIndex -= 10;
   }
-  bullet.remove()
-  liveIndex = liveBullets.indexOf(bullet)
-  liveBullets.indexOf(bullet)
+  bullet.remove();
+  liveIndex = liveBullets.indexOf(bullet);
+  liveBullets.indexOf(bullet);
 }
 
 //I wanted to attach this to enemy class however it caused pathing errors
@@ -346,8 +453,8 @@ function enemyMovement(enemy) {
       enemy.pathIndex += 1;
       //if the sprite reaches the end, deduct health from player and remove the enemy from game
       if (enemy.pathIndex == enemy.path.length) {
-        enemy.life = 1
-        game.playerHealth -= enemy.enemyDamage
+        enemy.life = 1;
+        game.playerHealth -= enemy.enemyDamage;
       } else {
         //next point is first index of array
         enemy.nextPoint = enemy.path[enemy.pathIndex];
@@ -365,6 +472,6 @@ function enemyMovement(enemy) {
   }
 }
 
-function mouseOverSprite(sprite){
-  activeElement = sprite
+function mouseOverSprite(sprite) {
+  activeElement = sprite;
 }

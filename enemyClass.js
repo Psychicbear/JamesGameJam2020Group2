@@ -7,7 +7,6 @@ class Enemy {
     this.sprite = createSprite(W-48, H-16, 32, 32);
     //Merges JSON properties with enemyType properties
     Object.assign(this.sprite, enemyTypes[enemyNum]);
-    this.sprite.maxHealth = this.sprite.enemyHealth
     this.sprite.addAnimation("default",enemyImg[0])
     this.sprite.setCollider("circle",0,0,8)
     this.sprite.debug = true
@@ -22,6 +21,4 @@ class Enemy {
     enemyGroup.add(this.sprite)
     liveEnemies.push(this)
   }
-
-  
 }

@@ -2,7 +2,7 @@ let waves = []
 let test
 class WaveManager{
     constructor(data){
-        this.playerMoney = 200
+        this.playerMoney = 200000
         this.playerHealth = 100
         this.waveActive = false
         this.currentWave = 0
