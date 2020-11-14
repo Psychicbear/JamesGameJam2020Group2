@@ -8,7 +8,6 @@ class Tower {
     this.sprite = createSprite(x, y, 100);
     this.sprite.debug = true;
     this.sprite.addImage(towerImg[this.id]);
-    //this.sprite.scale = 2;
     this.sprite.setCollider("circle", 0, 0, 20);
     this.sprite.rotateToDirecton = true;
     this.shots = 0;
@@ -30,6 +29,7 @@ class Tower {
     }
   }
 
+  //Takes money from player and makes tower immovable
   purchaseTower() {
     fill(0, 0, 0, 125);
     strokeWeight(2);
@@ -43,6 +43,7 @@ class Tower {
     }
   }
 
+  //Shows range of tower
   showRange(r, g, b) {
     fill(r, g, b, 125);
     strokeWeight(2);
@@ -53,6 +54,7 @@ class Tower {
     );
   }
 
+  //Selects a tower that you have placed down on the playing field with mouse
   selectPurchasedTower() {
     if (this.sprite.mouseIsOver) {
       console.log("Mouse is Over");
@@ -68,6 +70,7 @@ class Tower {
     }
   }
 
+  //Creates new enemy at tower position
   shootEnemy() {
     this.bullet = new Bullet(
       this.sprite.position,
@@ -81,10 +84,11 @@ class Tower {
 
 class Bullet {
   constructor(position, bulletNum, target, parent) {
-    this.parent = parent;
+    this.parent = parent;//Tower the bullet came from
     this.sprite = createSprite(position.x, position.y, 10, 10);
     this.sprite.target = { x: target.x, y: target.y };
     Object.assign(this.sprite, bulletTypes[bulletNum]);
+    this.sprite.addImage(bulletImg[this.sprite.id])
     this.sprite.attractionPoint(15, target.x, target.y);
     bulletGroup.add(this.sprite);
     liveBullets.push(this);
