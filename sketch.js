@@ -207,6 +207,7 @@ function drawPlayScreen() {
   //All enemies that are alive will move along a set path
   enemyGroup.forEach(function (enemy) {
     enemyMovement(enemy);
+    showEnemyHealth(enemy)
   });
 
   drawSprites(bulletGroup)
@@ -308,6 +309,13 @@ function targetSelect(spriteA,enemy) {
   }
 }
 
+function showEnemyHealth(enemy){
+  rectMode(CENTER)
+  percent = enemy.enemyHealth / enemy.maxHealth
+  fill(255,0,0,150)
+  rect(enemy.position.x, enemy.position.y - 21, lerp(0,60,percent), 10)
+}
+
 function enemyDamage(bullet,enemy){
   enemy.enemyHealth -= bullet.damage
   if(enemy.enemyHealth <= 0){
@@ -317,7 +325,9 @@ function enemyDamage(bullet,enemy){
     liveEnemies.splice(liveIndex,1)
   }
   if(bullet.id == 1){
-    enemy.pathIndex -= 10
+    if(enemy.pathIndex - 10 < 0){
+      enemy.pathIndex = 0
+    } else{enemy.pathIndex -= 10}
   }
   bullet.remove()
   liveIndex = liveBullets.indexOf(bullet)
