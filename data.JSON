@@ -8,83 +8,180 @@
             "isPurchased": false,
             "towerCost": 200,
             "attackTimer": 0,
-            "attackSpeed": 600,
+            "attackSpeed": 500,
             "canShoot": false,
             "bulletType": 0,
             "towerRange": 100,
-            "towerBuffs": {}
+            "towerBuffs": []
+        },
+        {
+            "name": "Double Feeder",
+            "id": 1,
+            "info": "With two barrels, this tower can feed two cats at once",
+            "isSelected": false,
+            "isPurchased": false,
+            "towerCost": 550,
+            "attackTimer": 0,
+            "attackSpeed": 600,
+            "canShoot": false,
+            "bulletType": 0,
+            "towerRange": 150,
+            "towerBuffs": ["doubleshot"]
         },
         {
             "name": "Spray Bottle",
-            "id": 1,
-            "info": "A cat's biggest fear, this tower has a chance of scaring cats back the way they came\n(Doesn't currently work)",
+            "id": 2,
+            "info": "A cat's biggest fear, this tower has a chance of scaring cats back the way they came",
             "isSelected": false,
             "isPurchased": false,
-            "towerCost": 400,
+            "towerCost": 800,
             "attackTimer": 0,
-            "attackSpeed": 1000,
+            "attackSpeed": 700,
             "canShoot": false,
             "bulletType": 1,
-            "towerRange": 75,
-            "towerBuffs": {}
+            "towerRange": 90,
+            "towerBuffs": []
+        },
+        {
+            "name": "Sniper Feeder",
+            "id": 3,
+            "info": "High range, high damage, low firerate",
+            "isSelected": false,
+            "isPurchased": false,
+            "towerCost": 1000,
+            "attackTimer": 0,
+            "attackSpeed": 1200,
+            "canShoot": false,
+            "bulletType": 2,
+            "towerRange": 500,
+            "towerBuffs": []
         },
         {
             "name": "Super Tower",
-            "id": 2,
+            "id": 4,
             "info": "Crazy fast firerate, the greatest yarn scientists worked together to manufacture this masterpiece",
             "isSelected": false,
             "isPurchased": false,
-            "towerCost": 3000,
+            "towerCost": 5000,
             "attackTimer": 0,
             "attackSpeed": 100,
             "canShoot": false,
             "bulletType": 0,
-            "towerRange": 150,
-            "towerBuffs": {}
+            "towerRange": 200,
+            "towerBuffs": []
         }
     ],
     "enemies": [
         {
             "id": 0,
-            "name": "catBasic",
-            "enemyScale": 1.5,
+            "spriteIndex": 0,
+            "name": "whiteBasic",
+            "enemyScale": 1.75,
             "enemySpeed": 30,
-            "enemyHealth": 1,
-            "enemyValue": 25,
+            "enemyHealth": 2,
+            "enemyValue": 15,
             "enemyDamage": 1,
             "resistances": []
         },
         {
             "id": 1,
-            "name": "catTank",
+            "spriteIndex": 0,
+            "name": "whiteTank",
             "enemyScale": 2,
             "enemySpeed": 50,
             "enemyHealth": 3,
-            "enemyValue": 50,
+            "enemyValue": 20,
             "enemyDamage": 2,
             "resistances": []
         },
         {
             "id": 2,
-            "name": "catFast",
-            "enemyScale": 1.75,
-            "enemySpeed": 40,
-            "enemyHealth": 3,
-            "enemyValue": 75,
+            "spriteIndex": 0,
+            "name": "whiteFast",
+            "enemyScale": 1.5,
+            "enemySpeed": 20,
+            "enemyHealth": 1,
+            "enemyValue": 20,
             "enemyDamage": 2,
+            "resistances": []
+        },
+        {
+            "id": 3,
+            "spriteIndex": 0,
+            "name": "whiteBoss",
+            "enemyScale": 3.5,
+            "enemySpeed": 40,
+            "enemyHealth": 75,
+            "enemyValue": 75,
+            "enemyDamage": 10,
+            "resistances": []
+        },
+        {
+            "id": 4,
+            "spriteIndex": 1,
+            "name": "brownBasic",
+            "enemyScale": 1.5,
+            "enemySpeed": 30,
+            "enemyHealth": 6,
+            "enemyValue": 35,
+            "enemyDamage": 4,
+            "resistances": []
+        },
+        {
+            "id": 5,
+            "spriteIndex": 1,
+            "name": "brownTank",
+            "enemyScale": 2,
+            "enemySpeed": 40,
+            "enemyHealth": 12,
+            "enemyValue": 50,
+            "enemyDamage": 6,
+            "resistances": []
+        },
+        {
+            "id": 6,
+            "spriteIndex": 1,
+            "name": "brownFast",
+            "enemyScale": 1.25,
+            "enemySpeed": 20,
+            "enemyHealth": 3,
+            "enemyValue": 20,
+            "enemyDamage": 6,
+            "resistances": []
+        },
+        {
+            "id": 7,
+            "spriteIndex": 1,
+            "name": "brownBoss",
+            "enemyScale": 3.5,
+            "enemySpeed": 50,
+            "enemyHealth": 125,
+            "enemyValue": 20,
+            "enemyDamage": 15,
             "resistances": []
         }
     ],
     "bullets": [
         {
             "id": 0,
+            "spriteIndex": 0,
             "name": "biscuit",
+            "speed": "10",
             "damage": 1
         },
         {
             "id": 1,
+            "spriteIndex": 0,
             "name": "water",
+            "speed": "10",
             "damage": 0
+        },
+        {
+            "id": 2,
+            "spriteIndex": 0,
+            "name": "50 Calibre Biscuit",
+            "speed": "20",
+            "damage": 3
         }
     ]
 }

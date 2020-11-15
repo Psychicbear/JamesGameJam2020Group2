@@ -16,6 +16,8 @@ let activeElement = {};
 let waveOverride = false;
 let instructPage = 0;
 let creditsPos = H;
+let menuInit = false
+let paused = false
 
 function preload() {
   mainScreenSong = loadSound("otherassets/mainscreensong.mp3");
@@ -23,7 +25,9 @@ function preload() {
   crunch = loadSound("otherassets/crunch.wav");
   shopclick = loadSound("otherassets/shopclick.wav");
   menuselect = loadSound("otherassets/menuselect.wav");
-  clicksound = loadSound("otherassets/clicksound.wav");
+  clicksound = loadSound("otherassets/placetower.wav");
+  selectsound = loadSound("otherassets/selectTower.wav")
+  sell = loadSound("otherassets/sell.wav")
   hiss = loadSound("otherassets/hiss.wav");
   instructiondoc = loadStrings("instructions.txt");
   creditsdoc = loadStrings("credits.txt");
@@ -34,13 +38,18 @@ function preload() {
   biscuitFactoryIcon = loadImage("otherassets/biccyFactory.png");
   towerImg = [
     loadImage("Sprites/tower1.png"),
+    loadImage("Sprites/doubletower.png"),
     loadImage("Sprites/watertower.png"),
+    loadImage("Sprites/sniper.png"),
     loadImage("Sprites/tower3.png"),
   ];
-  //bulletImg = [loadImage("assets/bullet1"), loadImage("assets/bullet2")]
+  towerbase = [loadImage("Sprites/towerbase.png")]
+  bulletImg = [loadImage("Sprites/bullet1.png"), loadImage("Sprites/bullet1.png")]
   enemyImg = [
-    loadAnimation("Sprites/tile0001.png", "Sprites/tile0003.png"),
-    loadAnimation("Sprites/whiteup0001.png", "Sprites/whiteup0003.png"),
+    loadAnimation("Sprites/white0001.png", "Sprites/white0003.png"),
+    loadAnimation("Sprites/brown0001.png", "Sprites/brown0003.png"),
+    loadAnimation("Sprites/orange0001.png", "Sprites/orange0003.png"),
+    loadAnimation("Sprites/black0001.png", "Sprites/black0003.png"),
   ];
   tileImg = [
     loadImage("Sprites/tiles0.png"),
@@ -85,6 +94,8 @@ function setup() {
   towerTypes = gameData.towers;
   bulletTypes = gameData.bullets;
   loadingStart = millis();
+  crunch.setVolume(0.2)
+  hiss.setVolume(0.2)
 
   // vid.size(200, 100);
 }
@@ -111,6 +122,7 @@ function draw() {
       drawCreditsScreen();
       break;
   }
+  //Show Framerate
   // fill(0);
   // textSize(20);
   // text("FPS: " + round(frameRate()), 50, 50);
@@ -128,10 +140,6 @@ function drawLoadingScreen(screenNumber) {
 
   if (x > 1500) {
     currentScene = screenNumber;
-    if (screenNumber === 1) {
-      mainScreenSong.setVolume(0.05);
-      mainScreenSong.play();
-    }
   }
   noStroke();
   textSize(32);
@@ -145,10 +153,15 @@ function drawMainMenuScreen() {
   frameRate(60);
   background(0);
 
-  yarnball = createSprite(width / 5.5, height / 3.15, 50, 50);
-  yarnball.addImage(yarnballImg);
-  yarnball2 = createSprite(width / 1.32, height / 3.15, 50, 50);
-  yarnball2.addImage(yarnballImg);
+  if(!menuInit){
+    yarnball = createSprite(width / 5.5, height / 3.15, 50, 50);
+    yarnball.addImage(yarnballImg);
+    yarnball2 = createSprite(width / 1.32, height / 3.15, 50, 50);
+    yarnball2.addImage(yarnballImg);
+    mainScreenSong.setVolume(0.05);
+    mainScreenSong.play();
+    menuInit = true
+  }
   textSize(32);
   fill("red");
   text("CATASTROPHE: DEFENDERS OF THE YARN", width / 5, height / 3);
@@ -186,7 +199,8 @@ function drawPlayScreen() {
     pg = createGraphics(W, H);
     createMap();
     playScreenSong.setVolume(0.05);
-    playScreenSong.play();
+    playScreenSong.loop();
+    selectsound.setVolume(0.15)
   }
 
   //Draws background tiles
@@ -194,11 +208,14 @@ function drawPlayScreen() {
   drawSprites(pathGroup);
 
   //Debug: draws enemy path
-  drawGrid(pathfinding, false);
+  //drawGrid(pathfinding, false);
 
   //Checks live towers for enemies in their radius
   liveTowers.forEach(function (tower) {
     tower.selectPurchasedTower();
+    if(tower.isPurchased){
+      image(towerbase[0],tower.sprite.position.x-28,tower.sprite.position.y-28,56,56)
+    }
     tower.sprite.overlap(enemyGroup, function (spriteA, enemy) {
       if (tower.currentTarget == 0) {
         tower.currentTarget = enemy;
@@ -208,9 +225,7 @@ function drawPlayScreen() {
           tower.sprite.position.y - tower.currentTarget.position.y
         );
         if (tower.canShoot && !tower.currentTarget.removed) {
-          tower.shootEnemy();
-          tower.attackTimer = 0;
-          tower.canShoot = false;
+          tower.shootEnemy()
         } else {
           tower.currentTarget = 0;
         }
@@ -225,6 +240,13 @@ function drawPlayScreen() {
 
   //Checks bullet collision
   liveBullets.forEach(function (bullet) {
+    if(bullet.sprite.delay){
+      if(bullet.sprite.timer >= 200){
+        bullet.sprite.delay = false
+      } else{bullet.sprite.timer += deltaTime}
+    } else if(!bullet.targetSet){
+      bullet.sprite.attractionPoint(bullet.sprite.speed, bullet.target.x, bullet.target.y)
+    }
     bullet.sprite.overlap(enemyGroup, enemyDamage);
     if (!bullet.sprite.overlap(bullet.parent)) {
       //If bullet leaves tower radius
@@ -270,6 +292,14 @@ function drawPlayScreen() {
         selectedTower = 0;
       } else {
         selectedTower.showRange(0, 0, 0);
+        if(keyWentUp(83)){
+          game.playerMoney += selectedTower.sellCost
+          selectedTower.sprite.remove()
+          liveIndex = liveTowers.indexOf(selectedTower);
+          liveTowers.splice(liveIndex, 1)
+          selectedTower = 0
+          sell.play()
+        }
       }
     }
     selectedTower.timer += deltaTime;
@@ -281,29 +311,17 @@ function drawPlayScreen() {
     game.waveActive = true;
   }
 
-  //If nextWave button is presesed, start next wave
-  if (game.waveActive || waveOverride) {
-    waveOverride = false;
-    game.spawnWave();
-    if (keyWentUp(32)) {
-      waveOverride = true;
-    }
-  } else {
-    liveEnemies = [];
-  }
-
-  //Displays level that player is on
-  textStyle(BOLD);
-  fill(255);
-  textSize(20);
-  textFont(newFont);
-  text("Level : " + (game.currentWave + 1), W * 0.92, H * 0.15);
-  text("$$$ : " + game.playerMoney, W * 0.91, H * 0.19);
-  text("HP : " + game.playerHealth, W * 0.92, H * 0.23);
+  
 
   //All enemies that are alive will move along a set path
   enemyGroup.forEach(function (enemy) {
     enemyMovement(enemy);
+    enemy.showHealthBar()
+    if(enemy.position.x < 0 || enemy.position.x > W){
+      enemy.remove()
+      liveIndex = liveEnemies.indexOf(enemy);
+      liveEnemies.splice(liveIndex, 1);
+    }
   });
 
   drawSprites(bulletGroup);
@@ -317,6 +335,42 @@ function drawPlayScreen() {
     activeElement.sprite = inactive;
   }
   game.isInfoShown();
+  
+  //Displays level that player is on
+  textAlign(LEFT)
+  textStyle(BOLD);
+  fill(255);
+  textSize(20);
+  textFont(newFont);
+  text("[P] to pause", W * 0.9, H * 0.11)
+  text("Level : " + (game.currentWave + 1), W * 0.92, H * 0.15);
+  text("$$$ : " + game.playerMoney, W * 0.91, H * 0.19);
+  text("HP : " + game.playerHealth, W * 0.92, H * 0.23);
+  if(game.gameWon){
+    textAlign(CENTER)
+    textSize(30)
+    console.log("You won")
+    text("YOU WON!\n You defended yourself against the grand army of cats\n Press [Space] to continue", W/2, H/2)
+    if(keyCode == 32){window.location.reload()}
+  } else if(game.gameOver){
+    textAlign(CENTER)
+    textSize(30)
+    console.log("You lost")
+    text("YOU LOST!\n Unfortunately you failed to defend against the onslaught of cats\n Press [Space] to continue", W/2, H/2)
+    if(keyCode == 32){window.location.reload()}
+  } else  if (game.waveActive) {
+    game.spawnWave();
+  } else {
+    liveEnemies = [];
+    textAlign(CENTER)
+    text("[Space] to start the next wave",W/2,50)
+    if(game.currentWave == 0){
+      text("Enemies attacking from here! >>>>",W*.8,H-20)
+    }
+  }
+
+  //If nextWave button is pressed, start next wave
+ 
   // console.log(activeElement);
 }
 
@@ -348,7 +402,7 @@ function drawInstructionsScreen() {
   } else if (instructPage === 9) {
     image(waterTowerIcon, width - 300, height / 2.5, 200, 200);
   } else if (instructPage === 10) {
-    image(towerImg[2], width - 300, height / 2.5, 200, 200);
+    image(towerImg[4], width - 300, height / 2.5, 200, 200);
   }
   // reverts page back to beginning if finishes and stops player from going backwards
   if (instructPage === 13) {
@@ -371,15 +425,13 @@ function drawCreditsScreen() {
   textFont(newFont);
   text(creditsdoc, 150, creditsPos, width - 250, height * 10);
   creditsPos -= 1.5;
-  if (creditsPos <= -3500) {
+  if (creditsPos <= -3700) {
     currentScene = 1;
   }
   textFont(newFont);
   textSize(14);
-  fill("red");
-  text("<Press [Esc] for Main Menu>", 10, 10, 100, 100);
-  fill("green");
-  text("<Press [Enter] to Play!>", 10, 80, 100, 100);
+  text("<[Enter] to skip>", 10, 20);
+  console.log(creditsPos)
 }
 
 //Converts loaded strings to readable arrays
@@ -468,18 +520,23 @@ function targetSelect(spriteA, enemy) {
 function enemyDamage(bullet, enemy) {
   enemy.enemyHealth -= bullet.damage;
   if (enemy.enemyHealth <= 0) {
-    // crunch.volume(0.2);
-    // crunch.play();
+    
+    enemy.enemyHealth = 0
     enemy.life = 1;
-    game.playerMoney += enemy.enemyValue;
+    game.playerMoney += round(random(enemy.enemyValue*.8,enemy.enemyValue*1.5));
     liveIndex = liveEnemies.indexOf(enemy);
     liveEnemies.splice(liveIndex, 1);
   }
-  if (bullet.id == 1) {
-    // hiss.volume(0.2);
-    // hiss.play();
-    enemy.pathIndex -= 10;
-  }
+if (bullet.id == 1) {
+    chance = random(0,1)
+    console.log(chance)
+    if(chance <= 0.2){
+      hiss.play();
+      if(enemy.pathIndex <= 10) {
+        enemy.pathIndex = 0
+      } else {enemy.pathIndex -= 10}
+    }
+  } else{crunch.play();}
   bullet.remove();
   liveIndex = liveBullets.indexOf(bullet);
   liveBullets.indexOf(bullet);
@@ -499,6 +556,8 @@ function enemyMovement(enemy) {
       if (enemy.pathIndex == enemy.path.length) {
         enemy.life = 1;
         game.playerHealth -= enemy.enemyDamage;
+        liveIndex = liveEnemies.indexOf(enemy);
+        liveEnemies.splice(liveIndex, 1);
       } else {
         //next point is first index of array
         enemy.nextPoint = enemy.path[enemy.pathIndex];

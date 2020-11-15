@@ -11,6 +11,7 @@ class Tower {
     //this.sprite.scale = 2;
     this.sprite.setCollider("circle", 0, 0, 20);
     this.sprite.rotateToDirecton = true;
+    this.sellCost = round(this.towerCost * 0.7)
     this.shots = 0;
     this.clickBuffer = 100;
     this.timer = 0;
@@ -40,6 +41,7 @@ class Tower {
       game.playerMoney -= selectedTower.towerCost;
       liveTowers.push(selectedTower);
       selectedTower = 0;
+      clicksound.play()
     }
   }
 
@@ -62,7 +64,7 @@ class Tower {
         if (mouseWentUp()) {
           console.log("You clicked the centre");
           selectedTower = this;
-          clicksound.play();
+          selectsound.play();
         }
       }
     }
@@ -73,19 +75,34 @@ class Tower {
       this.sprite.position,
       this.bulletType,
       this.currentTarget.position,
-      this.sprite
+      this.sprite, false
     );
-    this.shots += 1;
+    this.shots++
+    if(this.towerBuffs.indexOf("doubleshot") == 0){
+      this.bullet = new Bullet(this.sprite.position,
+        this.bulletType,
+        this.currentTarget.position,
+        this.sprite,true)
+      this.shots++
+    }
+      this.attackTimer = 0;
+      this.canShoot = false;
   }
 }
 
 class Bullet {
-  constructor(position, bulletNum, target, parent) {
+  constructor(position, bulletNum, target, parent, delay) {
     this.parent = parent;
     this.sprite = createSprite(position.x, position.y, 10, 10);
-    this.sprite.target = { x: target.x, y: target.y };
+    this.sprite.timer = 0
+    this.sprite.delay = delay
+    this.targetSet = false
+    this.target = { x: target.x, y: target.y };
     Object.assign(this.sprite, bulletTypes[bulletNum]);
-    this.sprite.attractionPoint(15, target.x, target.y);
+    this.sprite.scale = 1.5
+    this.sprite.life = 45
+    this.sprite.addImage(bulletImg[this.sprite.spriteIndex])
+    this.sprite.attractionPoint(this.sprite.speed, target.x, target.y);
     bulletGroup.add(this.sprite);
     liveBullets.push(this);
   }

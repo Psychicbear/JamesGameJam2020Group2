@@ -62,7 +62,6 @@ class Shop {
         text(i, this.towerContainer.x, this.towerContainer.y);
         this.drawShopTower(i);
         this.towerContainer.x += 60;
-        this.towerContainer.y = this.shopContainer.y + 75;
       } else {
         rect(this.towerContainer.x, this.towerContainer.y, 50);
         text(i, this.towerContainer.x, this.towerContainer.y);
