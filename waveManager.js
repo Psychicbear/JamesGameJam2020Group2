@@ -27,12 +27,12 @@ class WaveManager{
 
             } else {this.spawnTimer += deltaTime}
         } else if(liveEnemies.length == 0) {
-            if(this.currentWave == this.waves.length){
-                this.gameWon = true
-            }
             this.waveActive = false
             this.currentWave += 1
             this.currentEnemy = 0
+            if(this.currentWave == this.waves.length){
+                this.gameWon = true
+            }
         }
     }
 

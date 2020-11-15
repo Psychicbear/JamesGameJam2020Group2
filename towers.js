@@ -6,9 +6,8 @@ class Tower {
   constructor(x, y, towerNum) {
     Object.assign(this, towerTypes[towerNum]);
     this.sprite = createSprite(x, y, 100);
-    this.sprite.debug = true;
+    //this.sprite.debug = true;
     this.sprite.addImage(towerImg[this.id]);
-    //this.sprite.scale = 2;
     this.sprite.setCollider("circle", 0, 0, 20);
     this.sprite.rotateToDirecton = true;
     this.sellCost = round(this.towerCost * 0.7)

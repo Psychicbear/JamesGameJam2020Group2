@@ -210,27 +210,29 @@ function drawPlayScreen() {
   //Debug: draws enemy path
   //drawGrid(pathfinding, false);
 
-  //Checks live towers for enemies in their radius
   liveTowers.forEach(function (tower) {
     tower.selectPurchasedTower();
+    //Draws tower base image under tower
     if(tower.isPurchased){
       image(towerbase[0],tower.sprite.position.x-28,tower.sprite.position.y-28,56,56)
     }
+    //Checks live towers for enemies in their radius
     tower.sprite.overlap(enemyGroup, function (spriteA, enemy) {
       if (tower.currentTarget == 0) {
         tower.currentTarget = enemy;
       } else {
+        //Thanks to Henry for this code, rotates tower sprite to target
         tower.sprite.rotation = -atan2(
           tower.sprite.position.x - tower.currentTarget.position.x,
           tower.sprite.position.y - tower.currentTarget.position.y
-        );
+        );//Allows tower to shoot
         if (tower.canShoot && !tower.currentTarget.removed) {
           tower.shootEnemy()
         } else {
           tower.currentTarget = 0;
         }
       }
-    });
+    });//Sets tower fire rate
     if (tower.attackTimer > tower.attackSpeed) {
       tower.canShoot = true;
     } else {
@@ -238,8 +240,9 @@ function drawPlayScreen() {
     }
   });
 
-  //Checks bullet collision
+  
   liveBullets.forEach(function (bullet) {
+    //Allows double bullets from doubleshot tower
     if(bullet.sprite.delay){
       if(bullet.sprite.timer >= 200){
         bullet.sprite.delay = false
@@ -247,6 +250,7 @@ function drawPlayScreen() {
     } else if(!bullet.targetSet){
       bullet.sprite.attractionPoint(bullet.sprite.speed, bullet.target.x, bullet.target.y)
     }
+    //Checks bullet collision
     bullet.sprite.overlap(enemyGroup, enemyDamage);
     if (!bullet.sprite.overlap(bullet.parent)) {
       //If bullet leaves tower radius
@@ -287,11 +291,12 @@ function drawPlayScreen() {
           selectedTower.purchaseTower();
         }
       }
-    } else {
+    } else {//If player clicks away from tower, deselect it
       if (!selectedTower.mouseIsOver && mouseWentDown()) {
         selectedTower = 0;
       } else {
         selectedTower.showRange(0, 0, 0);
+        //Sells selected tower on pressing S key
         if(keyWentUp(83)){
           game.playerMoney += selectedTower.sellCost
           selectedTower.sprite.remove()
@@ -306,7 +311,7 @@ function drawPlayScreen() {
   }
 
   strokeWeight(1);
-  //Debug: spawn enemy on spacebar press
+  //Spawn enemy on spacebar press
   if (keyWentUp(32)) {
     game.waveActive = true;
   }
@@ -317,6 +322,7 @@ function drawPlayScreen() {
   enemyGroup.forEach(function (enemy) {
     enemyMovement(enemy);
     enemy.showHealthBar()
+    //Slight bugfix, if enemies leave canvas, remove them
     if(enemy.position.x < 0 || enemy.position.x > W){
       enemy.remove()
       liveIndex = liveEnemies.indexOf(enemy);
@@ -324,19 +330,21 @@ function drawPlayScreen() {
     }
   });
 
+  //Draws all necessary sprites
   drawSprites(bulletGroup);
   drawSprites(towerGroup);
   drawSprites(enemyGroup);
   shop.drawShop();
   drawSprites(shopGroup);
   shop.shopButton();
+  //resets activeElement
   if (!activeElement.sprite.mouseIsOver) {
     activeElement = {};
     activeElement.sprite = inactive;
   }
   game.isInfoShown();
   
-  //Displays level that player is on
+  //Displays game information
   textAlign(LEFT)
   textStyle(BOLD);
   fill(255);
@@ -351,14 +359,14 @@ function drawPlayScreen() {
     textSize(30)
     console.log("You won")
     text("YOU WON!\n You defended yourself against the grand army of cats\n Press [Space] to continue", W/2, H/2)
-    if(keyCode == 32){window.location.reload()}
+    if(keyWentUp(32)){window.location.reload()}
   } else if(game.gameOver){
     textAlign(CENTER)
     textSize(30)
     console.log("You lost")
     text("YOU LOST!\n Unfortunately you failed to defend against the onslaught of cats\n Press [Space] to continue", W/2, H/2)
-    if(keyCode == 32){window.location.reload()}
-  } else  if (game.waveActive) {
+    if(keyWentUp(32)){window.location.reload()}
+  } else  if (game.waveActive) {//If nextWave button is pressed, start next wave
     game.spawnWave();
   } else {
     liveEnemies = [];
@@ -369,9 +377,7 @@ function drawPlayScreen() {
     }
   }
 
-  //If nextWave button is pressed, start next wave
  
-  // console.log(activeElement);
 }
 
 // Instructions Screen!
